@@ -55,12 +55,29 @@ def authorize():
     token = token[7:]  # Strip off 'Bearer ' to get the actual token
 
     try:
-        decoded_token = auth.verify_id_token(token) # Validate token here
-        session['user'] = decoded_token # Add user to session
-        return redirect(url_for('dashboard'))
-    
-    except:
+        decoded_token = auth.verify_id_token(token)  # Validate token here
+        email = decoded_token['email']
+        print(f"User email: {email}")  # Debugging the email
+
+        # Check if the email is from the college domain
+        if email.endswith('@skasc.ac.in'):
+            session['user'] = decoded_token  # Add user to session
+            return redirect(url_for('dashboard'))
+        else:
+            print("Non-college email detected.")  # Debugging the email domain check
+            # Redirect to a different page for non-college emails
+            return redirect(url_for('non_college_email'))
+
+    except Exception as e:
+        print(f"Error during token verification: {str(e)}")  # Print any errors
         return "Unauthorized", 401
+
+    
+
+@app.route('/non-college-email')
+def non_college_email():
+    print("User redirected to non-college email page.")  # Debugging
+    return render_template('non_college_email.html', message="Please sign in with your college email (@skasc.ac.in).")
 
 
 #####################
@@ -114,11 +131,13 @@ def logout():
 @app.route('/dashboard')
 @auth_required
 def dashboard():
+    # Define the geolocation parameters
+    center_lat = 11.023155  # Your target latitude
+    center_lng = 76.965478  # Your target longitude
+    max_distance = 500  # Radius in meters
 
-    return render_template('dashboard.html')
-
-
-
+    # Pass these parameters to the dashboard template
+    return render_template('dashboard.html', center_lat=center_lat, center_lng=center_lng, max_distance=max_distance)
 
 
 
